@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- FONDO DE PARTÍCULAS -->
+<canvas id="particles-bg"></canvas>
+
+<div class="dashboard-container py-5">
+
+    <!-- Encabezado -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <h2 class="neon-yellow glow mb-3 mb-md-0">🪑 Mesas del salón</h2>
+        <a href="{% url 'inicio' %}" class="btn btn-outline-secondary neon-blue glow">⬅ Volver al Dashboard</a>
+    </div>
+
+    <!-- Filtro de mesas -->
+    <div class="mb-4">
+        <input type="text" id="buscador-mesas" class="form-control form-control-lg neon-input" placeholder="🔍 Buscar mesa...">
+    </div>
+
+    <!-- Tarjetas de mesas -->
+    <div class="row g-4" id="mesas-container">
+        {% for info in mesas_info %}
+        <div class="col-6 col-md-3 mesa-item">
+            {% if info.ocupada %}
+            <a href="{% url 'detalle_pedido' info.pedido_id %}" class="text-decoration-none">
+                <div class="mesa-card mesa-ocupada neon-red glow text-center p-3 h-100">
+                    <i class="bi bi-people-fill fs-2 mb-2"></i>
+                    <div class="fs-5 fw-bold">Mesa {{ info.mesa.numero }}</div>
+                    <small>Ocupada</small>
+                </div>
+            </a>
+            {% else %}
+            <a href="{% url 'abrir_mesa' info.mesa.id %}" class="text-decoration-none">
+                <div class="mesa-card mesa-libre neon-green glow text-center p-3 h-100">
+                    <i class="bi bi-person fs-2 mb-2"></i>
+                    <div class="fs-5 fw-bold">Mesa {{ info.mesa.numero }}</div>
+                    <small>Libre</small>
+                </div>
+            </a>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="col-12 text-center text-muted">
+            No hay mesas disponibles.
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+body { background: #0a0a0a; color: #fff; font-family: 'Poppins', sans-serif; }
+
+/* Partículas de fondo */
+#particles-bg { position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; }
+
+.dashboard-container { position:relative; z-index:1; }
+
+/* Encabezado */
+.neon-yellow { color: #fffa00; text-shadow: 0 0 8px #fffa00, 0 0 16px #fffa00; }
+.neon-blue { color: #00bfff; text-shadow: 0 0 8px #00bfff, 0 0 16px #00bfff; }
+.glow { animation: glowAnim 2s infinite alternate; }
+@keyframes glowAnim { from { box-shadow: 0 0 5px currentColor; } to { box-shadow: 0 0 20px currentColor; } }
+
+/* Filtro input */
+.neon-input { background:#111; color:#fff; border:2px solid #39ff14; border-radius:0.5rem; padding:0.5rem 1rem; }
+.neon-input::placeholder { color:#39ff14; opacity:0.7; }
+
+/* Tarjetas de mesas */
+.mesa-card { border-radius:1rem; font-weight:600; font-size:1.2rem; cursor:pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.mesa-card:hover { transform:translateY(-3px); box-shadow: 0 0 20px currentColor; }
+
+/* Colores estado mesas */
+.mesa-libre { background:#0a0a0a; border:2px solid #39ff14; color:#39ff14; }
+.mesa-ocupada { background:#0a0a0a; border:2px solid #ff2e2e; color:#ff2e2e; }
+
+/* Íconos centrados */
+.mesa-card i { display:block; margin:0 auto; font-size:2rem; }
+
+/* Texto */
+.mesa-card small { display:block; margin-top:0.3rem; color:#ccc; font-size:0.85rem; }
+
+/* Responsive */
+@media (max-width:575px) {
+    .mesa-card { font-size:1rem; padding:0.8rem; }
+    .mesa-card i { font-size:1.5rem; }
+    .neon-input { font-size:0.9rem; }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Filtro de mesas
+document.addEventListener("DOMContentLoaded", () => {
+    const buscador = document.getElementById("buscador-mesas");
+    const mesas = document.querySelectorAll(".mesa-item");
+
+    buscador.addEventListener("input", () => {
+        const filtro = buscador.value.toLowerCase();
+        mesas.forEach(item => {
+            const texto = item.innerText.toLowerCase();
+            item.style.display = texto.includes(filtro) ? "block" : "none";
+        });
+    });
+});
+
+// Partículas neón
+const canvas = document.getElementById('particles-bg');
+const ctx = canvas.getContext('2d');
+let particles = [];
+function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function initParticles(num=60){
+    particles = [];
+    for(let i=0;i<num;i++){
+        particles.push({
+            x: Math.random()*canvas.width,
+            y: Math.random()*canvas.height,
+            radius: Math.random()*2+1,
+            color: ['#39ff14','#fffa00','#ff2e2e','#00bfff','#9966ff'][Math.floor(Math.random()*5)],
+            dx: (Math.random()-0.5)*1.2,
+            dy: (Math.random()-0.5)*1.2
+        });
+    }
+}
+initParticles();
+
+function animateParticles(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p=>{
+        p.x+=p.dx; p.y+=p.dy;
+        if(p.x<0||p.x>canvas.width) p.dx*=-1;
+        if(p.y<0||p.y>canvas.height) p.dy*=-1;
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
+        ctx.fillStyle=p.color;
+        ctx.fill();
+    });
+    requestAnimationFrame(animateParticles);
+}
+animateParticles();
+</script>
+{% endblock %}

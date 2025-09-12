@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ticket {{ tipo|title }} - Pedido {{ pedido.id }}</title>
+  <style>
+    body {
+      font-family: monospace;
+      font-size: 12px;
+      width: 58mm; /* ancho ticketera térmica */
+      margin: 0;
+      padding: 5px;
+      background: #000;
+      color: #fff;
+    }
+    .titulo {
+      text-align: center;
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #0ff;
+    }
+    .linea {
+      border-top: 1px dashed #0ff;
+      margin: 5px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    td {
+      padding: 2px 0;
+      vertical-align: top;
+    }
+    .right { text-align: right; }
+    .center { text-align: center; }
+  </style>
+</head>
+<body onload="window.print()">
+  <div class="titulo">
+    🐟 CEVICHERÍA PUERTO PRADO 🐟 <br>
+    {% if tipo == "cocina" %}
+      📌 TICKET COCINA
+    {% else %}
+      🧾 TICKET CLIENTE
+    {% endif %}
+  </div>
+
+  <div class="linea"></div>
+
+  <p>
+    Mesa: {{ pedido.mesa.numero }} <br>
+    Pedido N°: {{ pedido.id }} <br>
+    Fecha: {{ pedido.creado|date:"d/m/Y H:i" }}
+  </p>
+
+  <div class="linea"></div>
+
+  <table>
+    {% for d in pedido.detalles.all %}
+      <tr>
+        {% if tipo == "cocina" %}
+          <!-- SOLO PLATOS Y CANTIDADES -->
+          <td colspan="2">{{ d.cantidad }} x {{ d.plato.nombre }}</td>
+        {% else %}
+          <!-- PLATOS, CANTIDAD Y PRECIO -->
+          <td>{{ d.cantidad }} x {{ d.plato.nombre }}</td>
+          <td class="right">S/ {{ d.subtotal|floatformat:2 }}</td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+  </table>
+
+  <div class="linea"></div>
+
+  {% if tipo == "cliente" %}
+    <p class="right"><b>TOTAL: S/ {{ pedido.total|floatformat:2 }}</b></p>
+    <div class="linea"></div>
+    <p class="center">¡Gracias por su visita!<br>Vuelva pronto 🙏</p>
+  {% else %}
+    <p class="center">➡ Preparar y entregar</p>
+  {% endif %}
+</body>
+</html>

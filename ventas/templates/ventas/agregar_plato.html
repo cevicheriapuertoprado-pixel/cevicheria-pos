@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="agregar-plato-container">
+  <div class="agregar-plato-card">
+    <h2 class="titulo">🍽️ Agregar Plato al Pedido #{{ pedido.id }}</h2>
+
+    <form method="post" class="agregar-plato-form">
+      {% csrf_token %}
+      
+      <div class="form-group">
+        <label for="plato">Plato</label>
+        <select name="plato" id="plato">
+          {% for plato in platos %}
+            <option value="{{ plato.id }}">{{ plato.nombre }} - S/ {{ plato.precio }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="cantidad">Cantidad</label>
+        <input type="number" name="cantidad" id="cantidad" value="1" min="1">
+      </div>
+
+      <div class="actions">
+        <a href="{% url 'detalle_pedido' pedido.id %}" class="btn-cancel">⬅ Volver</a>
+        <button type="submit" class="btn-submit">✅ Agregar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+body {
+  background:#0d1b2a;
+  color:#fff;
+  font-family:'Poppins',sans-serif;
+}
+.agregar-plato-container {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:80vh;
+  padding:1rem;
+}
+.agregar-plato-card {
+  background:#1b263b;
+  padding:2rem;
+  border-radius:1rem;
+  box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  width:100%;
+  max-width:500px;
+}
+.titulo {
+  text-align:center;
+  color:#00bfff;
+  margin-bottom:1rem;
+}
+.form-group {
+  margin-bottom:1rem;
+  display:flex;
+  flex-direction:column;
+}
+.form-group label {
+  font-weight:600;
+  margin-bottom:0.3rem;
+}
+.form-group select,
+.form-group input {
+  padding:0.7rem 1rem;
+  border-radius:0.6rem;
+  border:none;
+  background:#0d1b2a;
+  color:#fff;
+  font-size:1rem;
+}
+.form-group select:focus,
+.form-group input:focus {
+  box-shadow:0 0 0 2px #00bfff inset;
+  outline:none;
+}
+.actions {
+  display:flex;
+  justify-content:space-between;
+  gap:0.5rem;
+  margin-top:1rem;
+}
+.btn-cancel, .btn-submit {
+  flex:1;
+  padding:0.7rem;
+  border-radius:0.6rem;
+  font-weight:600;
+  text-align:center;
+  transition:0.3s;
+}
+.btn-cancel {
+  background:#2c3e50;
+  color:#ccc;
+  text-decoration:none;
+}
+.btn-cancel:hover { background:#3c4d63; }
+.btn-submit {
+  background:#00bfff;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+}
+.btn-submit:hover { background:#009acd; }
+</style>
+{% endblock %}

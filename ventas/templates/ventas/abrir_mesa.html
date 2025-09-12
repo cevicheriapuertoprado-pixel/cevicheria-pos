@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="abrir-mesa-container">
+  <div class="abrir-mesa-card">
+    <div class="abrir-mesa-header">
+      <h2>🪑 Abrir Mesa {{ mesa.numero }}</h2>
+      <a href="{% url 'lista_mesas' %}" class="btn-back">⬅ Volver</a>
+    </div>
+
+    <p class="abrir-mesa-text">
+      Esta acción abrirá un nuevo pedido para la mesa <b>{{ mesa.numero }}</b>.
+    </p>
+
+    <form method="post" class="abrir-mesa-form">
+      {% csrf_token %}
+      
+      <div class="form-group">
+        <label for="cliente">Nombre del cliente (opcional)</label>
+        <input type="text" name="cliente" id="cliente" placeholder="Ej: Juan Pérez">
+      </div>
+
+      <div class="actions">
+        <a href="{% url 'lista_mesas' %}" class="btn-cancel">Cancelar</a>
+        <button type="submit" class="btn-submit">✅ Abrir Pedido</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+body {
+  background:#0d1b2a;
+  color:#fff;
+  font-family:'Poppins',sans-serif;
+}
+.abrir-mesa-container {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:80vh;
+  padding:1rem;
+}
+.abrir-mesa-card {
+  background:#1b263b;
+  padding:2rem;
+  border-radius:1rem;
+  box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  width:100%;
+  max-width:500px;
+}
+.abrir-mesa-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:1rem;
+}
+.abrir-mesa-header h2 {
+  color:#00bfff;
+  font-size:1.4rem;
+  margin:0;
+}
+.btn-back {
+  background:#2c3e50;
+  color:#ccc;
+  padding:0.5rem 0.8rem;
+  border-radius:0.5rem;
+  text-decoration:none;
+  font-size:0.9rem;
+  transition:0.3s;
+}
+.btn-back:hover { background:#3c4d63; }
+.abrir-mesa-text {
+  margin-bottom:1rem;
+  font-size:0.95rem;
+  color:#ddd;
+}
+.form-group {
+  margin-bottom:1rem;
+  display:flex;
+  flex-direction:column;
+}
+.form-group label {
+  font-weight:600;
+  margin-bottom:0.3rem;
+}
+.form-group input {
+  padding:0.7rem 1rem;
+  border-radius:0.6rem;
+  border:none;
+  background:#0d1b2a;
+  color:#fff;
+  font-size:1rem;
+}
+.form-group input:focus {
+  box-shadow:0 0 0 2px #00bfff inset;
+  outline:none;
+}
+.actions {
+  display:flex;
+  justify-content:space-between;
+  gap:0.5rem;
+  margin-top:1rem;
+}
+.btn-cancel, .btn-submit {
+  flex:1;
+  padding:0.7rem;
+  border-radius:0.6rem;
+  font-weight:600;
+  text-align:center;
+  transition:0.3s;
+}
+.btn-cancel {
+  background:#2c3e50;
+  color:#ccc;
+  text-decoration:none;
+}
+.btn-cancel:hover { background:#3c4d63; }
+.btn-submit {
+  background:#00bfff;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+}
+.btn-submit:hover { background:#009acd; }
+</style>
+{% endblock %}

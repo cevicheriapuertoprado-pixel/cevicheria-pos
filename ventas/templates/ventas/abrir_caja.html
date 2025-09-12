@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="abrir-caja-container">
+  <div class="abrir-caja-card">
+    <h2 class="abrir-caja-title">💰 Abrir Caja</h2>
+
+    <form method="post" class="abrir-caja-form">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="monto_inicial">Monto inicial (S/.)</label>
+        <input type="number" id="monto_inicial" name="monto_inicial" step="0.01"
+               placeholder="Ej: 100.00" required>
+      </div>
+
+      <div class="actions">
+        <a href="{% url 'dashboard' %}" class="btn-cancel">Cancelar</a>
+        <button type="submit" class="btn-submit">✅ Abrir Caja</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+body {
+  background:#0d1b2a;
+  color:#fff;
+  font-family:'Poppins',sans-serif;
+}
+.abrir-caja-container {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:80vh;
+  padding:1rem;
+}
+.abrir-caja-card {
+  background:#1b263b;
+  padding:2rem;
+  border-radius:1rem;
+  box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  width:100%;
+  max-width:400px;
+  text-align:center;
+}
+.abrir-caja-title {
+  color:#00bfff;
+  font-size:1.6rem;
+  margin-bottom:1.5rem;
+}
+.abrir-caja-form .form-group {
+  margin-bottom:1rem;
+  text-align:left;
+}
+.abrir-caja-form label {
+  display:block;
+  margin-bottom:0.3rem;
+  font-weight:600;
+}
+.abrir-caja-form input {
+  width:100%;
+  padding:0.7rem 1rem;
+  border-radius:0.6rem;
+  border:none;
+  background:#0d1b2a;
+  color:#fff;
+  font-size:1rem;
+  outline:none;
+}
+.abrir-caja-form input:focus {
+  box-shadow:0 0 0 2px #00bfff inset;
+}
+.actions {
+  display:flex;
+  justify-content:space-between;
+  margin-top:1.5rem;
+  gap:0.5rem;
+}
+.btn-cancel, .btn-submit {
+  flex:1;
+  padding:0.7rem;
+  border-radius:0.6rem;
+  font-weight:600;
+  text-decoration:none;
+  text-align:center;
+  transition:0.3s;
+}
+.btn-cancel {
+  background:#2c3e50;
+  color:#ccc;
+}
+.btn-cancel:hover {
+  background:#3c4d63;
+}
+.btn-submit {
+  background:#00bfff;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+}
+.btn-submit:hover {
+  background:#009acd;
+}
+</style>
+{% endblock %}

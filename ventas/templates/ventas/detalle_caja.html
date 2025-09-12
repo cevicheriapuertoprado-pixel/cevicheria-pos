@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+  <!-- HERO -->
+  <div class="dashboard-hero mb-4" data-aos="fade-up">
+    <div class="hero-left">
+      <h2 class="mb-1 fw-bold">💰 Detalle de Caja</h2>
+      <p class="text-muted mb-0">Estado de la caja del día.</p>
+    </div>
+
+    <div class="hero-right text-end">
+      {% if caja %}
+        {% if caja.abierta %}
+          <!-- robot celebrando: caja abierta -->
+          <lottie-player src="{% static 'animations/robot_open.json' %}"
+                         background="transparent" speed="1"
+                         style="width:120px; height:120px;" loop autoplay></lottie-player>
+        {% else %}
+          <!-- robot informativo: caja cerrada -->
+          <lottie-player src="{% static 'animations/robot_closed.json' %}"
+                         background="transparent" speed="1"
+                         style="width:120px; height:120px;" loop autoplay></lottie-player>
+        {% endif %}
+      {% else %}
+        <!-- robot de bienvenida: aún no hay caja -->
+        <lottie-player src="{% static 'animations/robot_welcome.json' %}"
+                       background="transparent" speed="1"
+                       style="width:120px; height:120px;" loop autoplay></lottie-player>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- MENSAJES -->
+  {% if messages %}
+    <div class="mb-3">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- INFORMACIÓN DE LA CAJA -->
+  <div class="card card-modern card-gradient p-4 shadow-sm mb-4" data-aos="zoom-in">
+    {% if caja %}
+      <h5 class="mb-3">📅 Fecha: {{ caja.fecha }}</h5>
+      <p><b>Monto inicial:</b> S/. {{ caja.monto_inicial|floatformat:2 }}</p>
+      <p><b>Total vendido:</b> S/. {{ caja.total_vendido|default:0|floatformat:2 }}</p>
+      <p><b>Monto final:</b> S/. {{ caja.monto_final|floatformat:2 }}</p>
+
+      {% if caja.abierta %}
+        <span class="badge bg-success">Caja Abierta</span>
+        <div class="mt-3">
+          <a href="{% url 'cerrar_caja' caja.id %}" class="btn btn-danger">
+            <i class="bi bi-lock-fill me-1"></i> Cerrar Caja
+          </a>
+        </div>
+      {% else %}
+        <span class="badge bg-danger">Caja Cerrada</span>
+      {% endif %}
+    {% else %}
+      <p class="text-muted">⚠️ No se abrió caja hoy.</p>
+      <a href="{% url 'abrir_caja' %}" class="btn btn-primary">
+        <i class="bi bi-cash-coin me-1"></i> Abrir Caja
+      </a>
+    {% endif %}
+  </div>
+
+  <!-- GRÁFICO: PLATOS MÁS VENDIDOS -->
+  {% if top_platos %}
+  <div class="card shadow-sm p-4" data-aos="fade-up">
+    <h5 class="mb-3">🥇 Platos más vendidos</h5>
+    <canvas id="topPlatosChart" style="max-height: 350px;"></canvas>
+  </div>
+  {% endif %}
+</div>
+
+{% if top_platos %}
+<!-- CHART.JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const data = JSON.parse('{{ top_platos|escapejs }}');
+    const labels = data.map(item => item.plato__nombre);
+    const cantidades = data.map(item => item.total);
+
+    const ctx = document.getElementById("topPlatosChart");
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Platos más vendidos",
+                data: cantidades,
+                backgroundColor: ['#0d6efd', '#0dcaf0', '#20c997', '#ffc107', '#dc3545'],
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

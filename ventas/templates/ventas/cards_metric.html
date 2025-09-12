@@ -1,0 +1,52 @@
+<div class="col-12 col-md-6 col-xl-3">
+  <div class="metric-card">
+    <div class="metric-icon">
+      <i class="bi {{ icon }}"></i>
+    </div>
+    <div class="metric-info">
+      <div class="metric-title">{{ title }}</div>
+      <div class="metric-value">{{ value }}</div>
+    </div>
+  </div>
+</div>
+
+<style>
+.metric-card {
+  background:#1b263b;
+  border-radius:1rem;
+  padding:1rem;
+  display:flex;
+  align-items:center;
+  gap:0.8rem;
+  box-shadow:0 4px 15px rgba(0,0,0,0.3);
+  transition:transform 0.3s, box-shadow 0.3s;
+}
+.metric-card:hover {
+  transform:translateY(-4px);
+  box-shadow:0 0 15px rgba(0,191,255,0.4);
+}
+.metric-icon {
+  background:rgba(0,191,255,0.15);
+  width:50px;
+  height:50px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:0.8rem;
+  font-size:1.5rem;
+  color:#00bfff;
+}
+.metric-info {
+  display:flex;
+  flex-direction:column;
+}
+.metric-title {
+  color:#aaa;
+  font-size:0.9rem;
+}
+.metric-value {
+  font-size:1.6rem;
+  font-weight:700;
+  color:#fff;
+}
+</style>

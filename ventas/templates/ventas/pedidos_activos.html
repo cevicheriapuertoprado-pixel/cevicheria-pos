@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <h2 class="mb-4">📋 Pedidos Activos</h2>
+
+  {% if pedidos %}
+    <ul class="list-group">
+      {% for pedido in pedidos %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <strong>Pedido #{{ pedido.id }}</strong> - Mesa {{ pedido.mesa.numero }}
+            <br>
+            <small>Creado: {{ pedido.creado|date:"d/m/Y H:i" }}</small>
+          </div>
+          <div>
+            <a href="{% url 'detalle_pedido' pedido.id %}" class="btn btn-primary btn-sm">
+              ➕ Continuar Pedido
+            </a>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-muted">✅ No hay pedidos activos en este momento.</p>
+  {% endif %}
+</div>
+{% endblock %}
