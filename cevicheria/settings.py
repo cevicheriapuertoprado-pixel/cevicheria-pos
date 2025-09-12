@@ -25,7 +25,14 @@ SECRET_KEY = 'django-insecure-rp(-=z-!v6_b93l@eiuf9e8yyrkh=ln)z74)$kcls$#pwc3ng)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+import os
+
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "cevicheria-pos.onrender.com",  # Solo el dominio, sin https ni /
+]
+
 
 
 # Application definition
