@@ -7,26 +7,27 @@
 <div class="dashboard-container">
 
   <!-- HEADER -->
-  <header class="dashboard-header text-center mb-4">
+  <header class="dashboard-header">
     <h1 class="title">📊 Dashboard Cevichería</h1>
     <p class="subtitle">Control de caja, pedidos y ventas</p>
+
+    <!-- BOTÓN IMPORTAR EXCEL (solo staff) -->
+    {% if user.is_staff %}
+    <div class="mt-3">
+      <a href="{% url 'importar_carta' %}" class="btn btn-success btn-lg">
+        📥 Importar Carta desde Excel
+      </a>
+    </div>
+    {% endif %}
   </header>
 
-  <!-- BOTÓN IMPORTAR EXCEL (solo admin) -->
-  {% if user.is_staff %}
-  <div class="text-center mb-4">
-    <a href="{% url 'admin:ventas_plato_import_excel' %}" 
-       class="btn btn-success btn-lg" style="font-size:1.2rem; padding:0.8rem 1.5rem;">
-       📥 Importar Carta desde Excel
-    </a>
-  </div>
-  {% endif %}
-
   <!-- GRID PRINCIPAL -->
-  <div class="dashboard-grid">
+  <div class="dashboard-grid mt-4">
     <!-- Caja -->
     <div class="dashboard-card card-caja" data-target="{{ caja.monto_final|default:0 }}">
-      <svg xmlns="http://www.w3.org/2000/svg" class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M5 7V5a2 2 0 012-2h10a2 2 0 012 2v2m-1 4h-1m-8 0h-1m4-4v4"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M4 7h16M5 7V5a2 2 0 012-2h10a2 2 0 012 2v2m-1 4h-1m-8 0h-1m4-4v4"/>
+      </svg>
       <h4>Caja</h4>
       <h2 class="counter">0</h2>
       <p>{% if caja %}{% if caja.abierta %}Abierta{% else %}Cerrada{% endif %}{% else %}No creada{% endif %}</p>
@@ -34,7 +35,9 @@
 
     <!-- Pedidos -->
     <div class="dashboard-card card-pedidos" data-target="{{ total_pedidos|default:0 }}">
-      <svg xmlns="http://www.w3.org/2000/svg" class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 5h18M3 10h18M9 15h6"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M3 5h18M3 10h18M9 15h6"/>
+      </svg>
       <h4>Pedidos</h4>
       <h2 class="counter">0</h2>
       <p>Realizados hoy</p>
@@ -42,7 +45,9 @@
 
     <!-- Ingresos -->
     <div class="dashboard-card card-ingresos" data-target="{{ total_ingresos|default:0 }}">
-      <svg xmlns="http://www.w3.org/2000/svg" class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1v22M17 5H9a4 4 0 000 8h6a4 4 0 010 8H6"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12 1v22M17 5H9a4 4 0 000 8h6a4 4 0 010 8H6"/>
+      </svg>
       <h4>Ingresos</h4>
       <h2 class="counter">0</h2>
       <p>Total del día (S/.)</p>
@@ -50,7 +55,10 @@
 
     <!-- Platos -->
     <div class="dashboard-card card-platos">
-      <svg xmlns="http://www.w3.org/2000/svg" class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M8 12h8"/>
+      </svg>
       <h4>Top 5 Platos</h4>
       {% if platos_mas_vendidos %}
       <ul class="top-platos">
@@ -76,20 +84,16 @@
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="text-center mt-5 mb-3 text-muted">
-    🍽️ Sistema de Gestión - Cevichería Puerto Prado © 2025
-  </footer>
-
 </div>
 
-<!-- Datos a JS -->
+<!-- Datos para JS -->
 {{ ventas_por_dia|default:"[]"|json_script:"ventas-data" }}
 {{ platos_mas_vendidos|default:"[]"|json_script:"platos-data" }}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+// Contadores animados
 const counters = document.querySelectorAll('.counter');
 counters.forEach(c => {
   const target = parseFloat(c.parentElement.dataset.target) || 0;
@@ -102,6 +106,7 @@ counters.forEach(c => {
   }, 15);
 });
 
+// Gráfica ventas últimos 7 días
 const ventas = JSON.parse(document.getElementById("ventas-data").textContent);
 const ctx1 = document.getElementById('ventasChart');
 new Chart(ctx1, {
@@ -110,7 +115,8 @@ new Chart(ctx1, {
   options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
 });
 
-const platos = JSON.parse(document.getElementById("platos-data").textContent);
+// Gráfica platos más vendidos
+const platos = JSON.parse(document.getElementById('platos-data').textContent);
 const ctx2 = document.getElementById('platosChart');
 new Chart(ctx2, {
   type: 'doughnut',
@@ -126,74 +132,22 @@ body {
   font-family:'Poppins',sans-serif; 
   margin:0; padding:0; 
 }
-.dashboard-header { 
-  text-align:center; 
-  margin:1.5rem 0; 
-}
-.title { 
-  font-size:clamp(1.5rem, 5vw, 2rem); 
-  color:#00bfff; 
-  margin-bottom:0.5rem; 
-}
-.subtitle { 
-  color:#aaa; 
-  font-size:clamp(0.9rem, 3.5vw, 1rem); 
-}
-.dashboard-grid { 
-  display:grid; 
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); 
-  gap:1rem; 
-  margin-bottom:1.5rem; 
-}
-.dashboard-card { 
-  background:#1b263b; 
-  padding:1rem; 
-  border-radius:1rem; 
-  text-align:center; 
-  box-shadow:0 4px 10px rgba(0,0,0,0.3); 
-  transition:0.3s; 
-}
-.dashboard-card:hover { 
-  transform:translateY(-3px); 
-  box-shadow:0 0 20px rgba(0,191,255,0.5); 
-}
-.card-icon { 
-  width:36px; 
-  height:36px; 
-  margin:0 auto 0.4rem; 
-  stroke-width:2; 
-}
+.dashboard-header { text-align:center; margin:1.5rem 0; }
+.title { font-size:clamp(1.5rem, 5vw, 2rem); color:#00bfff; margin-bottom:0.5rem; }
+.subtitle { color:#aaa; font-size:clamp(0.9rem, 3.5vw, 1rem); }
+.dashboard-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:1rem; margin-bottom:1.5rem; }
+.dashboard-card { background:#1b263b; padding:1rem; border-radius:1rem; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition:0.3s; }
+.dashboard-card:hover { transform:translateY(-3px); box-shadow:0 0 20px rgba(0,191,255,0.5); }
+.card-icon { width:36px; height:36px; margin:0 auto 0.4rem; stroke-width:2; }
 .card-caja { border-top:3px solid #00bfff; }
 .card-pedidos { border-top:3px solid #4cc9f0; }
 .card-ingresos { border-top:3px solid #4361ee; }
 .card-platos { border-top:3px solid #4895ef; }
-.top-platos { 
-  list-style:none; 
-  padding:0; margin:0.5rem 0 0 0; 
-  font-size:0.85rem; 
-  max-height:120px; 
-  overflow-y:auto; 
-}
-.top-platos li { 
-  display:flex; 
-  justify-content:space-between; 
-  padding:0.2rem 0; 
-  border-bottom:1px solid #2c3e50; 
-}
-.charts-grid { 
-  display:grid; 
-  grid-template-columns:1fr; 
-  gap:1rem; 
-}
-.chart-card { 
-  background:#1b263b; 
-  padding:1rem; 
-  border-radius:1rem; 
-  box-shadow:0 4px 10px rgba(0,0,0,0.3); 
-}
-.chart-card canvas { 
-  max-height:220px; 
-}
+.top-platos { list-style:none; padding:0; margin:0.5rem 0 0 0; font-size:0.85rem; max-height:120px; overflow-y:auto; }
+.top-platos li { display:flex; justify-content:space-between; padding:0.2rem 0; border-bottom:1px solid #2c3e50; }
+.charts-grid { display:grid; grid-template-columns:1fr; gap:1rem; }
+.chart-card { background:#1b263b; padding:1rem; border-radius:1rem; box-shadow:0 4px 10px rgba(0,0,0,0.3); }
+.chart-card canvas { max-height:220px; }
 @media (min-width: 768px) { 
   .charts-grid { grid-template-columns:2fr 1fr; } 
   .chart-card canvas { max-height:280px; }
