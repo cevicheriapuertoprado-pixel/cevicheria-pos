@@ -1,0 +1,12 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block content %}
+<div class="mb-4 text-center">
+    <a href="{% url 'admin:ventas_plato_import_excel' %}" 
+       class="btn btn-success btn-lg">
+       📥 Importar Carta desde Excel
+    </a>
+</div>
+{{ block.super }}
+{% endblock %}
