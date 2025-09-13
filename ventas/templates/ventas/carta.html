@@ -8,9 +8,16 @@
         <h2 class="fw-bold text-primary">
             <i class="bi bi-journal-bookmark-fill me-2"></i>Carta de Platos
         </h2>
-        <a href="{% url 'inicio' %}" class="btn btn-outline-primary">
-            <i class="bi bi-arrow-left-circle me-1"></i> Volver al Dashboard
-        </a>
+        <div class="d-flex gap-2">
+            {% if user.is_staff %}
+            <a href="{% url 'admin:ventas_plato_import_excel' %}" class="btn btn-success">
+                📥 Importar Carta desde Excel
+            </a>
+            {% endif %}
+            <a href="{% url 'inicio' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left-circle me-1"></i> Volver al Dashboard
+            </a>
+        </div>
     </div>
 
     <!-- Buscador -->
