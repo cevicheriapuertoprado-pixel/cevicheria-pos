@@ -1,30 +1,41 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container-fluid">
-      <a class="navbar-brand fw-bold" href="{% url 'dashboard' %}">🐟 Cevichería Puerto Prado</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-  
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'lista_mesas' %}">Mesas</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'lista_cajas' %}">Cajas</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'pedidos_activos' %}">Pedidos activos</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
-          </li>
-        </ul>
-      </div>
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="{% url 'dashboard' %}">🐟 Cevichería Puerto Prado</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'lista_mesas' %}">Mesas</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'lista_cajas' %}">Cajas</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'pedidos_activos' %}">Pedidos activos</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
+        </li>
+
+        <!-- LINK IMPORTAR EXCEL -->
+        {% if user.is_staff %}
+        <li class="nav-item">
+          <a class="nav-link btn btn-success text-white ms-2" 
+             href="{% url 'admin:ventas_plato_import_excel' %}" 
+             style="padding:0.35rem 0.75rem; border-radius:0.25rem;">
+             📥 Importar Excel
+          </a>
+        </li>
+        {% endif %}
+
+      </ul>
     </div>
-  </nav>
-  
+  </div>
+</nav>
