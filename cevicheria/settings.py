@@ -81,13 +81,12 @@ WSGI_APPLICATION = 'cevicheria.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
 import dj_database_url
 import os
 
 DATABASES = {
     "default": dj_database_url.config(
-        default="postgresql://cevicheria_db_user:3ax98PgcPBnBWtzzZZJ3YUzPXUtLIIi3@dpg-d32g5pvdiees738o82hg-a.oregon-postgres.render.com/cevicheria_db"
+        default=os.environ.get("DATABASE_URL")
     )
 }
 
