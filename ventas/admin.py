@@ -1,4 +1,3 @@
-# ventas/admin.py
 from decimal import Decimal
 from django.contrib import admin, messages
 from django import forms
@@ -17,8 +16,8 @@ class PlatoAdmin(admin.ModelAdmin):
     list_display = ("nombre", "precio", "categoria", "activo")
     search_fields = ("nombre", "categoria")
     list_filter = ("categoria", "activo")
-    change_list_template = "admin/ventas/plato/change_list.html"  # Botón "Importar" en el listado
 
+    # ----------------- URLs personalizadas -----------------
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
@@ -30,6 +29,7 @@ class PlatoAdmin(admin.ModelAdmin):
         ]
         return custom_urls + urls
 
+    # ----------------- Vista para importar Excel -----------------
     def import_excel(self, request):
         if request.method == "POST":
             form = UploadExcelForm(request.POST, request.FILES)
@@ -46,7 +46,7 @@ class PlatoAdmin(admin.ModelAdmin):
                 for sheet_name in wb.sheetnames:
                     ws = wb[sheet_name]
 
-                    # Mapeo de encabezados
+                    # Mapeo de encabezados (insensible a mayúsculas)
                     headers = {}
                     for idx, cell in enumerate(ws[1], start=1):
                         if cell.value:
@@ -90,6 +90,7 @@ class PlatoAdmin(admin.ModelAdmin):
                         else:
                             actualizados += 1
 
+                # Mensajes finales
                 if hojas_ignoradas:
                     messages.warning(request, f"Hojas ignoradas (encabezados faltantes): {', '.join(hojas_ignoradas)}")
 
@@ -101,7 +102,8 @@ class PlatoAdmin(admin.ModelAdmin):
         else:
             form = UploadExcelForm()
 
-        return render(request, "admin/import_excel.html", {"form": form, "title": "Importar carta desde Excel"})
+        # Render del formulario (asegúrate de crear este template)
+        return render(request, "admin/import_excel.html", {"form": form, "title": "Importar Carta desde Excel"})
 
 # ----------------- Registro de modelos -----------------
 admin.site.register(Plato, PlatoAdmin)
