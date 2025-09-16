@@ -5,14 +5,11 @@ from decimal import Decimal
 # ================= MESA =================
 class Mesa(models.Model):
     numero = models.PositiveIntegerField(unique=True)
-    es_para_llevar = models.BooleanField(default=False)  # Nueva opción para diferenciar mesas virtuales para llevar
 
     class Meta:
         ordering = ["numero"]
 
     def __str__(self):
-        if self.es_para_llevar:
-            return "PARA LLEVAR"
         return f"Mesa {self.numero}"
 
 
