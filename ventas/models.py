@@ -33,34 +33,20 @@ class Plato(models.Model):
 
 # ================= PEDIDO =================
 class Pedido(models.Model):
-    ESTADOS = [
-        ("abierto", "Abierto"),
-        ("cerrado", "Cerrado"),
-        ("cancelado", "Cancelado"),
-    ]
-
-    mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE, null=True, blank=True)
+    mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE)
     creado = models.DateTimeField(auto_now_add=True)
-    estado = models.CharField(max_length=10, choices=ESTADOS, default="abierto")
-    para_llevar = models.BooleanField(default=False)
+    cerrado = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-creado"]
 
     @property
     def total(self):
+        """Retorna el total del pedido sumando los subtotales de cada detalle."""
         return sum((d.subtotal for d in self.detalles.all()), Decimal("0.00"))
 
-    @property
-    def abierto(self):
-        return self.estado == "abierto"
-
     def __str__(self):
-        if self.para_llevar:
-            return f"Pedido {self.id} - PARA LLEVAR"
-        if self.mesa:
-            return f"Pedido {self.id} - Mesa {self.mesa.numero}"
-        return f"Pedido {self.id}"
+        return f"Pedido {self.id} - Mesa {self.mesa.numero}"
 
 
 # ================= DETALLE PEDIDO =================
@@ -76,6 +62,7 @@ class DetallePedido(models.Model):
 
     @property
     def subtotal(self):
+        """Calcula subtotal de este detalle (cantidad x precio del plato)."""
         return self.cantidad * self.plato.precio
 
     def __str__(self):
@@ -96,6 +83,7 @@ class Caja(models.Model):
         ordering = ["-fecha"]
 
     def cerrar(self, monto_final=None):
+        """Cierra la caja calculando monto final si no se especifica."""
         if monto_final is not None:
             self.monto_final = monto_final
         else:
@@ -105,7 +93,8 @@ class Caja(models.Model):
         self.save()
 
     def calcular_total_vendido(self):
-        pedidos = Pedido.objects.filter(creado__date=self.fecha, estado="cerrado")
+        """Suma todos los pedidos cerrados del día."""
+        pedidos = Pedido.objects.filter(creado__date=self.fecha, cerrado=True)
         self.total_vendido = sum((p.total for p in pedidos), Decimal("0.00"))
         self.save()
         return self.total_vendido
