@@ -1,4 +1,3 @@
-# ventas/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum, F
 from django.contrib import messages
@@ -13,9 +12,8 @@ from .models import Mesa, Plato, Pedido, DetallePedido, Caja
 
 # ================= INICIO ==================
 def inicio(request):
-    """Página de inicio: muestra resumen de mesas y pedidos activos."""
     total_mesas = Mesa.objects.count()
-    mesas_ocupadas = Pedido.objects.filter(cerrado=False).values_list("mesa_id", flat=True).distinct().count()
+    mesas_ocupadas = Mesa.objects.filter(esta_ocupada=True).count()
     mesas_libres = max(total_mesas - mesas_ocupadas, 0)
     pedidos_activos = Pedido.objects.filter(cerrado=False).count()
 
@@ -28,76 +26,62 @@ def inicio(request):
 
 # ================= MESAS ==================
 def lista_mesas(request):
-    """Lista todas las mesas y su estado (ocupada/libre)."""
     mesas = Mesa.objects.all().order_by("numero")
     mesas_info = []
     for mesa in mesas:
         pedido_activo = Pedido.objects.filter(mesa=mesa, cerrado=False).first()
         mesas_info.append({
             "mesa": mesa,
-            "ocupada": bool(pedido_activo),
+            "ocupada": mesa.esta_ocupada,
             "pedido_id": pedido_activo.id if pedido_activo else None,
         })
     return render(request, "ventas/lista_mesas.html", {"mesas_info": mesas_info})
 
 def abrir_mesa(request, mesa_id):
-    """Abre un pedido en la mesa seleccionada."""
     mesa = get_object_or_404(Mesa, id=mesa_id)
     pedido_existente = Pedido.objects.filter(mesa=mesa, cerrado=False).first()
     if pedido_existente:
         return redirect("detalle_pedido", pedido_id=pedido_existente.id)
 
+    # Crear pedido y marcar mesa ocupada
     pedido = Pedido.objects.create(mesa=mesa)
+    mesa.esta_ocupada = True
+    mesa.save()
+
     return redirect("detalle_pedido", pedido_id=pedido.id)
+
+def liberar_mesa(request, mesa_id):
+    """Libera una mesa sin borrar pedidos (por ejemplo, si cliente se retira)."""
+    mesa = get_object_or_404(Mesa, id=mesa_id)
+    mesa.esta_ocupada = False
+    mesa.save()
+    # Cerramos pedidos abiertos asociados a esta mesa
+    Pedido.objects.filter(mesa=mesa, cerrado=False).update(cerrado=True)
+    messages.info(request, f"✅ Mesa {mesa.numero} liberada.")
+    return redirect("lista_mesas")
 
 # ================= CARTA ==================
 def carta(request, pedido_id=None):
-    """Muestra la carta de platos, agrupados por categoría."""
-    platos = Plato.objects.filter(activo=True).order_by("categoria", "nombre")
-    platos_por_categoria = {}
-    for plato in platos:
-        platos_por_categoria.setdefault(plato.categoria, []).append(plato)
+    categoria_filtro = request.GET.get("categoria")
+    platos_qs = Plato.objects.filter(activo=True)
+    if categoria_filtro:
+        platos_qs = platos_qs.filter(categoria=categoria_filtro)
+
+    platos = platos_qs.order_by("categoria", "nombre")
+    categorias = Plato.objects.values_list("categoria", flat=True).distinct()
 
     pedido = get_object_or_404(Pedido, id=pedido_id) if pedido_id else None
     return render(request, "ventas/carta.html", {
-        "platos_por_categoria": platos_por_categoria,
+        "platos": platos,
+        "categorias": categorias,
+        "categoria_seleccionada": categoria_filtro,
         "pedido": pedido
     })
 
-def importar_carta(request):
-    """Importa la carta desde un archivo Excel (por categorías)."""
-    if request.method == "POST" and request.FILES.get("archivo"):
-        archivo = request.FILES["archivo"]
-        fs = FileSystemStorage()
-        filename = fs.save(archivo.name, archivo)
-        filepath = fs.path(filename)
-        try:
-            xls = pd.ExcelFile(filepath)
-            for hoja in xls.sheet_names:
-                df = pd.read_excel(filepath, sheet_name=hoja)
-                df.columns = df.columns.str.strip().str.lower()
-                for _, row in df.iterrows():
-                    nombre = str(row.get("producto", "")).strip()
-                    try:
-                        precio = float(row.get("precio", 0))
-                    except ValueError:
-                        precio = 0
-                    if nombre and precio > 0:
-                        Plato.objects.update_or_create(
-                            nombre=nombre,
-                            defaults={"precio": precio, "categoria": hoja},
-                        )
-            messages.success(request, "✅ Carta actualizada correctamente desde Excel")
-        except Exception as e:
-            messages.error(request, f"❌ Error al importar carta: {str(e)}")
-        return redirect("lista_mesas")
-    return render(request, "ventas/importar_carta.html")
-
 # ================= PEDIDOS ==================
 def detalle_pedido(request, pedido_id):
-    """Detalle del pedido: lista platos agregados y calcula total."""
     pedido = get_object_or_404(Pedido, id=pedido_id)
-    detalles = pedido.detalles.all()  # Usamos related_name si existe
+    detalles = pedido.detalles.all()
     total = detalles.aggregate(total=Sum(F("cantidad") * F("plato__precio")))["total"] or 0
     platos = Plato.objects.filter(activo=True).order_by("categoria", "nombre")
 
@@ -109,7 +93,6 @@ def detalle_pedido(request, pedido_id):
     })
 
 def agregar_plato(request, pedido_id, plato_id):
-    """Agrega un plato al pedido (o incrementa su cantidad si ya existe)."""
     pedido = get_object_or_404(Pedido, id=pedido_id)
     plato = get_object_or_404(Plato, id=plato_id)
     detalle, creado = DetallePedido.objects.get_or_create(
@@ -123,7 +106,6 @@ def agregar_plato(request, pedido_id, plato_id):
     return redirect("detalle_pedido", pedido_id=pedido.id)
 
 def quitar_plato(request, pedido_id, plato_id):
-    """Resta cantidad de un plato o lo elimina si llega a cero."""
     pedido = get_object_or_404(Pedido, id=pedido_id)
     plato = get_object_or_404(Plato, id=plato_id)
     detalle = get_object_or_404(DetallePedido, pedido=pedido, plato=plato)
@@ -135,7 +117,6 @@ def quitar_plato(request, pedido_id, plato_id):
     return redirect("detalle_pedido", pedido_id=pedido.id)
 
 def cerrar_pedido(request, pedido_id):
-    """Cierra un pedido y actualiza la caja si está abierta."""
     pedido = get_object_or_404(Pedido, id=pedido_id)
     if pedido.cerrado:
         return redirect("detalle_pedido", pedido_id=pedido.id)
@@ -143,131 +124,13 @@ def cerrar_pedido(request, pedido_id):
     pedido.cerrado = True
     pedido.save()
 
+    if pedido.mesa:
+        pedido.mesa.esta_ocupada = False
+        pedido.mesa.save()
+
     hoy = timezone.localdate()
     caja = Caja.objects.filter(fecha=hoy, abierta=True).first()
     if caja:
         caja.calcular_total_vendido()
 
-    return redirect("detalle_pedido", pedido_id=pedido.id)
-
-# ================= DASHBOARD ==================
-def dashboard(request):
-    """Dashboard principal con caja, pedidos y gráficos."""
-    hoy = timezone.localdate()
-
-    caja = Caja.objects.filter(fecha=hoy, abierta=True).first()
-    ultima_caja = Caja.objects.filter(fecha__lt=hoy).order_by("-fecha").first()
-
-    pedidos = Pedido.objects.filter(creado__date=hoy)
-    total_pedidos = pedidos.count()
-    total_ingresos = DetallePedido.objects.filter(pedido__in=pedidos)\
-        .aggregate(total=Sum(F("cantidad") * F("plato__precio")))["total"] or 0
-
-    platos_mas_vendidos = DetallePedido.objects.filter(pedido__creado__date=hoy)\
-        .values("plato__nombre")\
-        .annotate(total=Sum("cantidad"))\
-        .order_by("-total")[:5]
-
-    siete_dias = hoy - timedelta(days=6)
-    ventas_por_dia_qs = DetallePedido.objects.filter(pedido__creado__date__gte=siete_dias)\
-        .values("pedido__creado__date")\
-        .annotate(total=Sum(F("cantidad") * F("plato__precio")))\
-        .order_by("pedido__creado__date")
-
-    ventas_data = []
-    for i in range(7):
-        fecha = siete_dias + timedelta(days=i)
-        item = next((v for v in ventas_por_dia_qs if v["pedido__creado__date"] == fecha), None)
-        ventas_data.append({
-            "fecha": fecha.strftime("%Y-%m-%d"),
-            "total": item["total"] if item else 0
-        })
-
-    return render(request, "ventas/dashboard.html", {
-        "caja": caja,
-        "ultima_caja": ultima_caja,
-        "total_pedidos": total_pedidos,
-        "total_ingresos": total_ingresos,
-        "platos_mas_vendidos": list(platos_mas_vendidos),
-        "ventas_por_dia": ventas_data
-    })
-
-# ================= CAJA ==================
-def abrir_caja(request):
-    """Abre la caja del día con monto inicial."""
-    hoy = timezone.localdate()
-
-    if Caja.objects.filter(fecha=hoy).exists():
-        messages.info(request, "ℹ️ Ya existe una caja para hoy, no puedes abrir otra.")
-        return redirect("dashboard")
-
-    if request.method == "POST":
-        try:
-            monto_inicial = float(request.POST.get("monto_inicial", 0))
-        except:
-            monto_inicial = 0
-
-        Caja.objects.create(
-            fecha=hoy,
-            fecha_apertura=timezone.now(),
-            monto_inicial=monto_inicial,
-            monto_final=monto_inicial,
-            abierta=True
-        )
-        messages.success(request, "✅ Caja abierta correctamente.")
-        return redirect("dashboard")
-
-    return render(request, "ventas/abrir_caja.html")
-
-def cerrar_caja(request, pk):
-    """Cierra la caja y calcula el monto final."""
-    caja = get_object_or_404(Caja, pk=pk)
-    if caja.abierta:
-        hoy = caja.fecha
-        pedidos = Pedido.objects.filter(creado__date=hoy)
-        total_vendido = DetallePedido.objects.filter(pedido__in=pedidos)\
-            .aggregate(total=Sum(F("cantidad") * F("plato__precio")))["total"] or 0
-
-        caja.total_vendido = total_vendido
-        caja.monto_final = caja.monto_inicial + total_vendido
-        caja.abierta = False
-        caja.save()
-        messages.success(request, "✅ Caja cerrada correctamente.")
-    else:
-        messages.warning(request, "La caja ya estaba cerrada.")
-
-    return redirect("dashboard")
-
-def lista_cajas(request):
-    """Lista de todas las cajas (historial)."""
-    cajas = Caja.objects.all().order_by("-fecha")
-    return render(request, "ventas/lista_cajas.html", {"cajas": cajas})
-
-def detalle_caja(request, caja_id):
-    """Muestra el detalle de una caja en particular."""
-    caja = get_object_or_404(Caja, id=caja_id)
-    pedidos = Pedido.objects.filter(creado__date=caja.fecha)
-
-    top_platos = (
-        DetallePedido.objects.filter(pedido__in=pedidos)
-        .values(nombre=F("plato__nombre"))
-        .annotate(total=Sum("cantidad"))
-        .order_by("-total")[:5]
-    )
-
-    return render(request, "ventas/detalle_caja.html", {
-        "caja": caja,
-        "top_platos": json.dumps(list(top_platos), default=str)
-    })
-
-# ================= TICKET ==================
-def imprimir_ticket(request, pedido_id, tipo="cliente"):
-    """Genera ticket de un pedido para impresión."""
-    pedido = get_object_or_404(Pedido, id=pedido_id)
-    return render(request, "ventas/ticket.html", {"pedido": pedido, "tipo": tipo})
-
-# ================= PEDIDOS ACTIVOS ==================
-def pedidos_activos(request):
-    """Lista de pedidos activos (no cerrados)."""
-    pedidos = Pedido.objects.filter(cerrado=False)
-    return render(request, "ventas/pedidos_activos.html", {"pedidos": pedidos})
+    return redirect("lista_mesas")

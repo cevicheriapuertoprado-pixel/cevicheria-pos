@@ -2,12 +2,15 @@
 {% load static %}
 
 {% block content %}
-<div class="detalle-caja-container">
+<canvas id="particles-bg"></canvas>
+
+<div class="detalle-caja-container position-relative" style="z-index:1;">
   <div class="detalle-caja-card" data-aos="fade-up">
-    <h2 class="titulo">💰 Caja del Día</h2>
-    <p class="subtitulo">Gestión de la caja — apertura, cierre y resumen.</p>
+    <h2 class="titulo neon-yellow glow">💰 Caja del Día</h2>
+    <p class="subtitulo text-muted">Gestión de la caja — apertura, cierre y resumen.</p>
 
     {% if caja %}
+      <!-- Info Caja -->
       <div class="info-line">
         <span>Monto inicial:</span>
         <strong>S/. {{ caja.monto_inicial|floatformat:2 }}</strong>
@@ -24,13 +27,17 @@
       {% if caja.abierta %}
         <div class="estado estado-abierta">✅ Caja Abierta</div>
         <div class="acciones">
-          <a href="{% url 'cerrar_caja' caja.id %}" class="btn-cerrar">🔒 Cerrar Caja</a>
+          <a href="{% url 'cerrar_caja' caja.id %}" class="btn-cerrar"
+             onclick="return confirm('¿Seguro que deseas cerrar la caja de hoy?')">
+            🔒 Cerrar Caja
+          </a>
         </div>
       {% else %}
         <div class="estado estado-cerrada">🔒 Caja Cerrada</div>
         <p class="texto-mutedo">La caja de hoy ya fue cerrada.</p>
       {% endif %}
     {% else %}
+      <!-- Sin caja abierta -->
       <div class="sin-caja">
         <p class="texto-mutedo">No se abrió caja hoy.</p>
         <a href="{% url 'abrir_caja' %}" class="btn-abrir">💰 Abrir Caja</a>
@@ -42,11 +49,9 @@
 
 {% block extra_css %}
 <style>
-body {
-  background:#0d1b2a;
-  color:#fff;
-  font-family:'Poppins',sans-serif;
-}
+body { background:#0a0a0a; color:#fff; font-family:'Poppins',sans-serif; }
+#particles-bg { position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; }
+
 .detalle-caja-container {
   display:flex;
   justify-content:center;
@@ -55,32 +60,29 @@ body {
   padding:1rem;
 }
 .detalle-caja-card {
-  background:#1b263b;
+  background:#111;
   padding:2rem;
-  border-radius:1rem;
-  box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  border-radius:1.2rem;
+  box-shadow:0 0 25px rgba(0,255,127,0.2);
   width:100%;
   max-width:500px;
+  animation: fadeIn 0.4s ease-in-out;
 }
-.titulo {
-  text-align:center;
-  color:#00bfff;
-  margin-bottom:0.5rem;
-}
-.subtitulo {
-  text-align:center;
-  color:#aaa;
-  margin-bottom:1.5rem;
-}
+
+.titulo { text-align:center; margin-bottom:0.5rem; }
+.subtitulo { text-align:center; font-size:0.95rem; margin-bottom:1.5rem; }
+
 .info-line {
   display:flex;
   justify-content:space-between;
-  background:#0d1b2a;
+  background:#1b1b1b;
   padding:0.7rem 1rem;
   border-radius:0.6rem;
   margin-bottom:0.7rem;
   font-size:1rem;
+  box-shadow:0 0 10px rgba(0,255,127,0.05);
 }
+
 .estado {
   text-align:center;
   margin:1rem 0;
@@ -90,33 +92,68 @@ body {
 }
 .estado-abierta { background:rgba(0,255,127,0.1); color:#00ff7f; }
 .estado-cerrada { background:rgba(255,99,71,0.1); color:#ff6347; }
+
 .acciones { text-align:center; }
-.btn-cerrar {
-  background:#ff4d4d;
-  padding:0.7rem 1rem;
+.btn-cerrar, .btn-abrir {
+  display:inline-block;
+  padding:0.8rem 1.2rem;
   border-radius:0.6rem;
   color:#fff;
   text-decoration:none;
   font-weight:600;
-  transition:0.3s;
+  transition:transform 0.2s ease, box-shadow 0.2s ease;
 }
-.btn-cerrar:hover { background:#e63939; }
-.sin-caja {
-  text-align:center;
+.btn-cerrar { background:#ff4d4d; }
+.btn-cerrar:hover { background:#e63939; transform:scale(1.05); box-shadow:0 0 15px #ff4d4d; }
+
+.btn-abrir { background:#00bfff; }
+.btn-abrir:hover { background:#009acd; transform:scale(1.05); box-shadow:0 0 15px #00bfff; }
+
+@keyframes fadeIn {
+  from { opacity:0; transform:translateY(10px); }
+  to { opacity:1; transform:translateY(0); }
 }
-.texto-mutedo {
-  color:#aaa;
-  margin-bottom:1rem;
-}
-.btn-abrir {
-  background:#00bfff;
-  padding:0.7rem 1rem;
-  border-radius:0.6rem;
-  color:#fff;
-  text-decoration:none;
-  font-weight:600;
-  transition:0.3s;
-}
-.btn-abrir:hover { background:#009acd; }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Partículas de fondo
+const canvas = document.getElementById('particles-bg');
+const ctx = canvas.getContext('2d');
+let particles = [];
+function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function initParticles(num=30){
+  particles = [];
+  for(let i=0;i<num;i++){
+    particles.push({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height,
+      radius: Math.random()*2+1,
+      color: ['#39ff14','#fffa00','#ff2e2e','#00bfff'][Math.floor(Math.random()*4)],
+      dx: (Math.random()-0.5)*1,
+      dy: (Math.random()-0.5)*1
+    });
+  }
+}
+initParticles();
+
+function animateParticles(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p=>{
+    p.x+=p.dx; p.y+=p.dy;
+    if(p.x<0||p.x>canvas.width) p.dx*=-1;
+    if(p.y<0||p.y>canvas.height) p.dy*=-1;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
+    ctx.fillStyle=p.color;
+    ctx.fill();
+  });
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+</script>
 {% endblock %}

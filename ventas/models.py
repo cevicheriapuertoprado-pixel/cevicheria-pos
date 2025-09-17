@@ -5,12 +5,15 @@ from decimal import Decimal
 # ================= MESA =================
 class Mesa(models.Model):
     numero = models.PositiveIntegerField(unique=True)
+    esta_ocupada = models.BooleanField(default=False)
+    es_para_llevar = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["numero"]
 
     def __str__(self):
-        return f"Mesa {self.numero}"
+        estado = "Ocupada" if self.esta_ocupada else "Libre"
+        return f"Mesa {self.numero} ({estado})"
 
 
 # ================= PLATO =================
@@ -30,20 +33,43 @@ class Plato(models.Model):
 
 # ================= PEDIDO =================
 class Pedido(models.Model):
-    mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE)
+    ESTADOS = [
+        ("abierto", "Abierto"),
+        ("cerrado", "Cerrado"),
+        ("cancelado", "Cancelado"),
+    ]
+
+    # 🔧 Cambiamos para permitir pedidos sin mesa física
+    mesa = models.ForeignKey(Mesa, on_delete=models.SET_NULL, null=True, blank=True)
+
     creado = models.DateTimeField(auto_now_add=True)
-    cerrado = models.BooleanField(default=False)
+    estado = models.CharField(max_length=10, choices=ESTADOS, default="abierto")
+    para_llevar = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-creado"]
 
     @property
     def total(self):
-        """Retorna el total del pedido sumando los subtotales de cada detalle."""
         return sum((d.subtotal for d in self.detalles.all()), Decimal("0.00"))
 
+    def cerrar_pedido(self):
+        self.estado = "cerrado"
+        self.save()
+        if self.mesa:
+            self.mesa.esta_ocupada = False
+            self.mesa.save()
+
+    def cancelar_pedido(self):
+        self.estado = "cancelado"
+        self.save()
+        if self.mesa:
+            self.mesa.esta_ocupada = False
+            self.mesa.save()
+
     def __str__(self):
-        return f"Pedido {self.id} - Mesa {self.mesa.numero}"
+        mesa_info = f"Mesa {self.mesa.numero}" if self.mesa else "Para llevar"
+        return f"Pedido {self.id} - {mesa_info} ({self.estado})"
 
 
 # ================= DETALLE PEDIDO =================
@@ -59,7 +85,6 @@ class DetallePedido(models.Model):
 
     @property
     def subtotal(self):
-        """Calcula subtotal de este detalle (cantidad x precio del plato)."""
         return self.cantidad * self.plato.precio
 
     def __str__(self):
@@ -80,7 +105,6 @@ class Caja(models.Model):
         ordering = ["-fecha"]
 
     def cerrar(self, monto_final=None):
-        """Cierra la caja calculando monto final si no se especifica."""
         if monto_final is not None:
             self.monto_final = monto_final
         else:
@@ -90,8 +114,7 @@ class Caja(models.Model):
         self.save()
 
     def calcular_total_vendido(self):
-        """Suma todos los pedidos cerrados del día."""
-        pedidos = Pedido.objects.filter(creado__date=self.fecha, cerrado=True)
+        pedidos = Pedido.objects.filter(creado__date=self.fecha, estado="cerrado")
         self.total_vendido = sum((p.total for p in pedidos), Decimal("0.00"))
         self.save()
         return self.total_vendido
