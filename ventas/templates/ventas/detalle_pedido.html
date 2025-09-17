@@ -8,7 +8,7 @@
   <!-- Encabezado -->
   <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
     <h2 class="neon-yellow glow">
-      🍽 Mesa {{ pedido.mesa.numero }} — Pedido #{{ pedido.id }}
+      🍽 {% if pedido.mesa %}Mesa {{ pedido.mesa.numero }}{% else %}Para llevar{% endif %} — Pedido #{{ pedido.id }}
     </h2>
     <a href="{% url 'lista_mesas' %}" class="btn btn-outline-secondary neon-blue glow">
       ⬅ Volver a Mesas
@@ -63,7 +63,7 @@
             🔒 Cerrar pedido
           </a>
         {% else %}
-          <span class="badge bg-danger p-2"><i class="bi bi-lock-fill"></i> Pedido cerrado</span>
+          <span class="badge bg-danger p-2"><i class="bi bi-lock-fill"></i> Pedido {{ pedido.estado }}</span>
         {% endif %}
       </div>
 

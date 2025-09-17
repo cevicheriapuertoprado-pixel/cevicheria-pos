@@ -135,47 +135,36 @@ def detalle_pedido(request, pedido_id):
 
 
 def agregar_plato(request, pedido_id, plato_id):
-    """Agrega un plato al pedido (o incrementa su cantidad si ya existe)."""
     pedido = get_object_or_404(Pedido, id=pedido_id)
+    if pedido.estado != "abierto":
+        messages.error(request, "No se puede modificar un pedido cerrado o cancelado.")
+        return redirect("detalle_pedido", pedido_id=pedido.id)
     plato = get_object_or_404(Plato, id=plato_id)
-    detalle, creado = DetallePedido.objects.get_or_create(
-        pedido=pedido,
-        plato=plato,
-        defaults={"cantidad": 1}
-    )
-    if not creado:
-        detalle.cantidad += 1
-        detalle.save()
+    detalle, created = DetallePedido.objects.get_or_create(pedido=pedido, plato=plato)
+    detalle.cantidad += 1
+    detalle.save()
     return redirect("detalle_pedido", pedido_id=pedido.id)
+
 
 
 def quitar_plato(request, pedido_id, plato_id):
-    """Resta cantidad de un plato o lo elimina si llega a cero."""
     pedido = get_object_or_404(Pedido, id=pedido_id)
-    plato = get_object_or_404(Plato, id=plato_id)
-    detalle = get_object_or_404(DetallePedido, pedido=pedido, plato=plato)
-    if detalle.cantidad > 1:
-        detalle.cantidad -= 1
-        detalle.save()
-    else:
+    if pedido.estado != "abierto":
+        messages.error(request, "No se puede modificar un pedido cerrado o cancelado.")
+        return redirect("detalle_pedido", pedido_id=pedido.id)
+    detalle = get_object_or_404(DetallePedido, pedido=pedido, plato_id=plato_id)
+    detalle.cantidad -= 1
+    if detalle.cantidad <= 0:
         detalle.delete()
+    else:
+        detalle.save()
     return redirect("detalle_pedido", pedido_id=pedido.id)
 
-
 def cerrar_pedido(request, pedido_id):
-    """Cierra un pedido y actualiza la caja si está abierta."""
     pedido = get_object_or_404(Pedido, id=pedido_id)
-    if pedido.estado == "cerrado":
+    if pedido.estado != "abierto":
         return redirect("detalle_pedido", pedido_id=pedido.id)
-
-    # usa el método del modelo para cerrar y liberar mesa
     pedido.cerrar_pedido()
-
-    hoy = timezone.localdate()
-    caja = Caja.objects.filter(fecha=hoy, abierta=True).first()
-    if caja:
-        caja.calcular_total_vendido()
-
     return redirect("detalle_pedido", pedido_id=pedido.id)
 
 
