@@ -8,6 +8,7 @@ from datetime import timedelta
 import pandas as pd
 import json
 from decimal import Decimal
+from collections import defaultdict
 
 from .models import Mesa, Plato, Pedido, DetallePedido, Caja
 
