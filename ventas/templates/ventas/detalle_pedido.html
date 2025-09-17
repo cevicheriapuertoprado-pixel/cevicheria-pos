@@ -31,7 +31,7 @@
             </div>
             <div>
               <span class="fw-bold text-success">S/. {{ detalle.subtotal|floatformat:2 }}</span>
-              {% if not pedido.cerrado %}
+              {% if pedido.estado == "abierto" %}
                 <a href="{% url 'quitar_plato' pedido.id detalle.plato.id %}" 
                    class="btn btn-outline-danger btn-sm ms-2">
                   ❌ Quitar
@@ -57,7 +57,7 @@
           🧾 Cliente
         </a>
 
-        {% if not pedido.cerrado %}
+        {% if pedido.estado == "abierto" %}
           <a href="{% url 'cerrar_pedido' pedido.id %}" class="btn btn-danger btn-sm"
              onclick="return confirm('¿Cerrar este pedido y liberar la mesa?')">
             🔒 Cerrar pedido
@@ -74,7 +74,7 @@
     {% endif %}
   </div>
 
-  {% if not pedido.cerrado %}
+  {% if pedido.estado == "abierto" %}
   <!-- Buscador -->
   <div class="mb-4">
     <input type="text" id="buscador" class="form-control form-control-lg neon-input"
