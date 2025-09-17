@@ -7,15 +7,15 @@
 
     <!-- Encabezado -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
-        <h2 class="neon-yellow glow mb-3 mb-md-0">🪑 Mesas del Salón</h2>
-        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary neon-blue glow">
+        <h2 class="fw-bold text-white mb-3 mb-md-0">🪑 Mesas del Salón</h2>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-light">
             ⬅ Volver al Dashboard
         </a>
     </div>
 
     <!-- Filtro de mesas -->
-    <div class="mb-4">
-        <input type="text" id="buscador-mesas" class="form-control form-control-lg neon-input"
+    <div class="mb-4 sticky-top buscador-wrapper">
+        <input type="text" id="buscador-mesas" class="form-control form-control-lg"
                placeholder="🔍 Buscar mesa...">
     </div>
 
@@ -24,7 +24,6 @@
         {% for info in mesas_info %}
         <div class="col-6 col-md-3 mesa-item">
             <div class="mesa-card {% if info.ocupada %}mesa-ocupada{% else %}mesa-libre{% endif %} text-center p-3 h-100">
-
                 <i class="bi {% if info.ocupada %}bi-people-fill{% else %}bi-person{% endif %} fs-2 mb-2"></i>
                 <div class="fs-5 fw-bold">Mesa {{ info.mesa.numero }}</div>
                 <small>{% if info.ocupada %}Ocupada{% else %}Libre{% endif %}</small>
@@ -51,7 +50,7 @@
             </div>
         </div>
         {% empty %}
-        <div class="col-12 text-center text-muted">
+        <div class="col-12 text-center text-secondary">
             ⚠ No hay mesas registradas.
         </div>
         {% endfor %}
@@ -62,29 +61,77 @@
 
 {% block extra_css %}
 <style>
-body { background: #0a0a0a; color: #fff; font-family: 'Poppins', sans-serif; }
-#particles-bg { position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; }
-.dashboard-container { position:relative; z-index:1; }
+body {
+  background: #0b1522; /* Mismo color que el detalle de pedido */
+  color: #fff;
+  font-family: 'Poppins', sans-serif;
+}
 
-.neon-yellow { color: #fffa00; text-shadow: 0 0 8px #fffa00, 0 0 16px #fffa00; }
-.neon-blue { color: #00bfff; text-shadow: 0 0 8px #00bfff, 0 0 16px #00bfff; }
+#particles-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
 
-.neon-input { background:#111; color:#fff; border:2px solid #39ff14; border-radius:0.5rem; padding:0.5rem 1rem; }
-.neon-input::placeholder { color:#39ff14; opacity:0.7; }
+.dashboard-container {
+  position: relative;
+  z-index: 1;
+}
 
-.mesa-card { border-radius:1rem; font-weight:600; font-size:1.1rem; cursor:pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
-.mesa-card:hover { transform:translateY(-3px); box-shadow: 0 0 20px currentColor; }
+/* Buscador sticky */
+.buscador-wrapper {
+  top: 70px;
+  background: #0b1522;
+  z-index: 10;
+  padding: 8px 0;
+  border-bottom: 1px solid #1e2a38;
+}
 
-.mesa-libre { background:#0a0a0a; border:2px solid #39ff14; color:#39ff14; }
-.mesa-ocupada { background:#0a0a0a; border:2px solid #ff2e2e; color:#ff2e2e; }
+/* Tarjetas de mesas */
+.mesa-card {
+  border-radius: 1rem;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: #1e2a38;
+  color: #fff;
+}
+.mesa-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 12px rgba(0, 191, 255, 0.4);
+}
 
-.mesa-card i { display:block; margin:0 auto; font-size:2rem; }
-.mesa-card small { display:block; margin-top:0.3rem; color:#ccc; font-size:0.85rem; }
+/* Estado mesa */
+.mesa-libre {
+  border: 2px solid #39ff14;
+  color: #39ff14;
+}
+.mesa-ocupada {
+  border: 2px solid #ff2e2e;
+  color: #ff2e2e;
+}
+
+.mesa-card i {
+  display: block;
+  margin: 0 auto;
+  font-size: 2rem;
+}
+
+.mesa-card small {
+  display: block;
+  margin-top: 0.3rem;
+  color: #ccc;
+  font-size: 0.85rem;
+}
 
 @media (max-width:575px) {
-    .mesa-card { font-size:1rem; padding:0.8rem; }
-    .mesa-card i { font-size:1.5rem; }
-    .neon-input { font-size:0.9rem; }
+  .mesa-card { font-size: 1rem; padding: 0.8rem; }
+  .mesa-card i { font-size: 1.5rem; }
 }
 </style>
 {% endblock %}
@@ -109,37 +156,41 @@ document.addEventListener("DOMContentLoaded", () => {
 const canvas = document.getElementById('particles-bg');
 const ctx = canvas.getContext('2d');
 let particles = [];
-function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-function initParticles(num=60){
-    particles = [];
-    for(let i=0;i<num;i++){
-        particles.push({
-            x: Math.random()*canvas.width,
-            y: Math.random()*canvas.height,
-            radius: Math.random()*2+1,
-            color: ['#39ff14','#fffa00','#ff2e2e','#00bfff','#9966ff'][Math.floor(Math.random()*5)],
-            dx: (Math.random()-0.5)*1.2,
-            dy: (Math.random()-0.5)*1.2
-        });
-    }
+function initParticles(num=50){
+  particles = [];
+  for(let i=0;i<num;i++){
+    particles.push({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height,
+      radius: Math.random()*2+1,
+      color: ['#39ff14','#fffa00','#ff2e2e','#00bfff','#9966ff'][Math.floor(Math.random()*5)],
+      dx: (Math.random()-0.5)*1,
+      dy: (Math.random()-0.5)*1
+    });
+  }
 }
 initParticles();
 
 function animateParticles(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    particles.forEach(p=>{
-        p.x+=p.dx; p.y+=p.dy;
-        if(p.x<0||p.x>canvas.width) p.dx*=-1;
-        if(p.y<0||p.y>canvas.height) p.dy*=-1;
-        ctx.beginPath();
-        ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
-        ctx.fillStyle=p.color;
-        ctx.fill();
-    });
-    requestAnimationFrame(animateParticles);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p=>{
+    p.x+=p.dx; p.y+=p.dy;
+    if(p.x<0||p.x>canvas.width) p.dx*=-1;
+    if(p.y<0||p.y>canvas.height) p.dy*=-1;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
+    ctx.fillStyle=p.color;
+    ctx.fill();
+  });
+  requestAnimationFrame(animateParticles);
 }
 animateParticles();
 </script>
