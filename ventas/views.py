@@ -69,25 +69,30 @@ def liberar_mesa(request, pk):
 
 
 # ================= CARTA ==================
-def carta(request, pedido_id=None):
-    """Muestra la carta de platos, con filtro opcional por categoría."""
-    categoria = request.GET.get("categoria")
-    platos_qs = Plato.objects.filter(activo=True)
-    if categoria:
-        platos_qs = platos_qs.filter(categoria=categoria)
 
-    # opciones para filtrar
-    categorias = Plato.objects.values_list("categoria", flat=True).distinct().order_by("categoria")
-    platos = platos_qs.order_by("categoria", "nombre")
+def carta(request, pedido_id=None):
+    """
+    Muestra la carta de platos, agrupados por categoría.
+    Si se pasa un pedido_id, se permite agregar platos a ese pedido.
+    """
+    categoria_filtro = request.GET.get("categoria")
+    platos_qs = Plato.objects.filter(activo=True)
+    if categoria_filtro:
+        platos_qs = platos_qs.filter(categoria=categoria_filtro)
+
+    # Agrupar platos por categoría
+    platos_por_categoria = defaultdict(list)
+    for plato in platos_qs.order_by("categoria", "nombre"):
+        platos_por_categoria[plato.categoria].append(plato)
+
+    # Si hay pedido_id, obtener el pedido
     pedido = get_object_or_404(Pedido, id=pedido_id) if pedido_id else None
 
-    return render(request, "ventas/carta.html", {
-        "platos": platos,
-        "categorias": categorias,
-        "categoria_seleccionada": categoria,
-        "pedido": pedido
-    })
-
+    context = {
+        "platos_por_categoria": dict(platos_por_categoria),  # convertir a dict normal
+        "pedido": pedido,
+    }
+    return render(request, "ventas/carta.html", context)
 
 def importar_carta(request):
     """Importa la carta desde un archivo Excel (por categorías)."""
