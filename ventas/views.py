@@ -13,11 +13,10 @@ from .models import Mesa, Plato, Pedido, DetallePedido, Caja
 
 # ================= INICIO ==================
 def inicio(request):
-    """Página de inicio: muestra resumen de mesas y pedidos activos."""
     total_mesas = Mesa.objects.count()
-    mesas_ocupadas = Pedido.objects.filter(cerrado=False).values_list("mesa_id", flat=True).distinct().count()
+    mesas_ocupadas = Pedido.objects.filter(estado="abierto").values_list("mesa_id", flat=True).distinct().count()
     mesas_libres = max(total_mesas - mesas_ocupadas, 0)
-    pedidos_activos = Pedido.objects.filter(cerrado=False).count()
+    pedidos_activos = Pedido.objects.filter(estado="abierto").count()
 
     return render(request, "ventas/inicio.html", {
         "total_mesas": total_mesas,
@@ -28,11 +27,10 @@ def inicio(request):
 
 # ================= MESAS ==================
 def lista_mesas(request):
-    """Lista todas las mesas y su estado (ocupada/libre)."""
     mesas = Mesa.objects.all().order_by("numero")
     mesas_info = []
     for mesa in mesas:
-        pedido_activo = Pedido.objects.filter(mesa=mesa, cerrado=False).first()
+        pedido_activo = Pedido.objects.filter(mesa=mesa, estado="abierto").first()
         mesas_info.append({
             "mesa": mesa,
             "ocupada": bool(pedido_activo),
@@ -41,13 +39,14 @@ def lista_mesas(request):
     return render(request, "ventas/lista_mesas.html", {"mesas_info": mesas_info})
 
 def abrir_mesa(request, mesa_id):
-    """Abre un pedido en la mesa seleccionada."""
     mesa = get_object_or_404(Mesa, id=mesa_id)
-    pedido_existente = Pedido.objects.filter(mesa=mesa, cerrado=False).first()
+    pedido_existente = Pedido.objects.filter(mesa=mesa, estado="abierto").first()
     if pedido_existente:
         return redirect("detalle_pedido", pedido_id=pedido_existente.id)
 
     pedido = Pedido.objects.create(mesa=mesa)
+    mesa.esta_ocupada = True
+    mesa.save()
     return redirect("detalle_pedido", pedido_id=pedido.id)
 
 # ================= CARTA ==================
@@ -135,13 +134,11 @@ def quitar_plato(request, pedido_id, plato_id):
     return redirect("detalle_pedido", pedido_id=pedido.id)
 
 def cerrar_pedido(request, pedido_id):
-    """Cierra un pedido y actualiza la caja si está abierta."""
     pedido = get_object_or_404(Pedido, id=pedido_id)
-    if pedido.cerrado:
+    if pedido.estado == "cerrado":
         return redirect("detalle_pedido", pedido_id=pedido.id)
 
-    pedido.cerrado = True
-    pedido.save()
+    pedido.cerrar_pedido()  # Usa método del modelo
 
     hoy = timezone.localdate()
     caja = Caja.objects.filter(fecha=hoy, abierta=True).first()
@@ -268,6 +265,5 @@ def imprimir_ticket(request, pedido_id, tipo="cliente"):
 
 # ================= PEDIDOS ACTIVOS ==================
 def pedidos_activos(request):
-    """Lista de pedidos activos (no cerrados)."""
-    pedidos = Pedido.objects.filter(cerrado=False)
+    pedidos = Pedido.objects.filter(estado="abierto")
     return render(request, "ventas/pedidos_activos.html", {"pedidos": pedidos})
