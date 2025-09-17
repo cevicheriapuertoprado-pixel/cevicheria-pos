@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container py-4">
+<canvas id="particles-bg"></canvas>
+
+<div class="container py-4 position-relative" style="z-index:1;">
 
   <!-- Encabezado -->
   <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
@@ -63,38 +65,28 @@
   </div>
 
   {% if pedido.estado == "abierto" %}
-  <!-- Buscador sticky -->
-  <div class="mb-3 sticky-top" style="top:80px; background:rgba(10,10,10,0.85); z-index:2; padding:10px 0;">
+  <!-- Buscador -->
+  <div class="mb-3 sticky-top" style="top:80px; background:#0a0a0a; z-index:2; padding:10px 0;">
     <input type="text" id="buscador" class="form-control form-control-lg neon-input"
-           placeholder="🔍 Buscar plato o categoría...">
+           placeholder="🔍 Buscar en la carta...">
   </div>
 
-  <!-- Lista de platos agrupados por categoría -->
-  <div id="lista-platos" class="scroll-container">
-    {% for categoria, platos_categoria in platos_por_categoria.items %}
-    <div class="mb-4 categoria-section" id="cat-{{ categoria|slugify }}">
-      <h4 class="fw-bold text-light border-start border-3 border-primary ps-2 categoria-title">
-        <i class="bi bi-tags-fill text-primary me-2"></i>{{ categoria }}
-      </h4>
-      <div class="row g-3 mt-1">
-        {% for plato in platos_categoria %}
-        <div class="col-12 col-md-6 plato-item">
-          <div class="card plato-card shadow border-0 mesa-card mesa-libre text-light">
-            <div class="card-body d-flex justify-content-between align-items-center">
-              <span class="fw-semibold">{{ plato.nombre }}</span>
-              <span>
-                <span class="text-info fw-bold">S/. {{ plato.precio|floatformat:2 }}</span>
-                <a href="{% url 'agregar_plato' pedido.id plato.id %}" 
-                   class="btn btn-success btn-sm ms-2">
-                  ➕
-                </a>
-              </span>
-            </div>
+  <!-- Lista de platos en contenedor scroll -->
+  <div id="lista-platos" class="row g-3 scroll-container">
+    {% for plato in platos %}
+      <div class="col-12 col-md-6">
+        <div class="card plato-item shadow border-0 mesa-card mesa-libre text-light">
+          <div class="card-body d-flex justify-content-between align-items-center">
+            <span class="fw-semibold">{{ plato.nombre }}</span>
+            <span>
+              <span class="text-info fw-bold">S/. {{ plato.precio|floatformat:2 }}</span>
+              <a href="{% url 'agregar_plato' pedido.id plato.id %}" class="btn btn-success btn-sm ms-2">
+                ➕ Agregar
+              </a>
+            </span>
           </div>
         </div>
-        {% endfor %}
       </div>
-    </div>
     {% endfor %}
   </div>
   {% endif %}
@@ -104,39 +96,31 @@
 
 {% block extra_css %}
 <style>
-/* Fondo estático inspirado en logo */
-body {
-  background: linear-gradient(to bottom, #87CEEB 0%, #ffffff 50%, #FFD700 100%);
-  background-attachment: fixed;
-  color:#fff;
-  font-family:'Poppins',sans-serif;
-}
+body { background:#0a0a0a; color:#fff; font-family:'Poppins',sans-serif; }
+#particles-bg { position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; }
 
-/* Scroll para lista de platos */
+/* Listado de platos con scroll */
 .scroll-container {
-  max-height: 55vh;
+  max-height: 55vh;  /* evita que se vaya muy abajo */
   overflow-y: auto;
   padding-right: 5px;
-  scrollbar-width: thin;
 }
 
-/* Tarjetas de plato */
-.plato-card {
-  background: rgba(0,0,0,0.7);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.plato-card:hover {
-  transform: scale(1.02);
-  box-shadow: 0 0 15px rgba(0,191,255,0.8);
-}
-
-/* Lista de detalles */
+/* Mejor aspecto en hover */
 .list-group-item {
   border-left: 4px solid #00bfff;
-  background: rgba(0,0,0,0.8);
+  background: #111;
   transition: transform 0.2s ease, background 0.2s ease;
 }
-.list-group-item:hover { transform: translateX(4px); background:rgba(20,20,20,0.9); }
+.list-group-item:hover { transform: translateX(4px); background:#1a1a1a; }
+
+.plato-item {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.plato-item:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 15px #39ff14;
+}
 </style>
 {% endblock %}
 
@@ -145,21 +129,48 @@ body {
 // Filtro de búsqueda
 document.getElementById("buscador")?.addEventListener("input", function() {
   const filtro = this.value.toLowerCase();
-  document.querySelectorAll(".categoria-section").forEach(sec => {
-    let visible = false;
-    const cards = sec.querySelectorAll(".plato-card");
-    cards.forEach(card => {
-      const nombre = card.innerText.toLowerCase();
-      const categoria = sec.querySelector("h4").innerText.toLowerCase();
-      if (nombre.includes(filtro) || categoria.includes(filtro)) {
-        card.parentElement.style.display = "block";
-        visible = true;
-      } else {
-        card.parentElement.style.display = "none";
-      }
-    });
-    sec.style.display = visible ? "block" : "none";
+  document.querySelectorAll(".plato-item").forEach(item => {
+    const texto = item.innerText.toLowerCase();
+    item.style.display = texto.includes(filtro) ? "block" : "none";
   });
 });
+
+// Partículas de fondo
+const canvas = document.getElementById('particles-bg');
+const ctx = canvas.getContext('2d');
+let particles = [];
+function resizeCanvas(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function initParticles(num=30){
+  particles=[];
+  for(let i=0;i<num;i++){
+    particles.push({
+      x:Math.random()*canvas.width,
+      y:Math.random()*canvas.height,
+      radius:Math.random()*2+1,
+      color:['#39ff14','#fffa00','#ff2e2e','#00bfff','#9966ff'][Math.floor(Math.random()*5)],
+      dx:(Math.random()-0.5)*1,
+      dy:(Math.random()-0.5)*1
+    });
+  }
+}
+initParticles();
+
+function animateParticles(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p=>{
+    p.x+=p.dx; p.y+=p.dy;
+    if(p.x<0||p.x>canvas.width) p.dx*=-1;
+    if(p.y<0||p.y>canvas.height) p.dy*=-1;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
+    ctx.fillStyle=p.color;
+    ctx.fill();
+  });
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
 </script>
 {% endblock %}
