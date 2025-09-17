@@ -57,9 +57,9 @@ def abrir_mesa(request, mesa_id):
     return redirect("detalle_pedido", pedido_id=pedido.id)
 
 
-def liberar_mesa(request, mesa_id):
+def liberar_mesa(request, pk):
     """Libera una mesa sin borrar pedidos (por ejemplo, si cliente se retira)."""
-    mesa = get_object_or_404(Mesa, id=mesa_id)
+    mesa = get_object_or_404(Mesa, pk=pk)
     mesa.esta_ocupada = False
     mesa.save()
     # opcional: marcar pedidos abiertos asociados como cancelados o cerrados? Aquí los dejamos cerrados:
