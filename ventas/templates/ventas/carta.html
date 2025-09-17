@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container py-5">
+<div class="container py-4">
 
     <!-- Encabezado -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
@@ -10,76 +10,93 @@
         </h2>
         <div class="d-flex gap-2">
             {% if user.is_staff %}
-            <a href="{% url 'admin:ventas_plato_import_excel' %}" class="btn btn-success">
+            <a href="{% url 'admin:ventas_plato_import_excel' %}" class="btn btn-success shadow-sm">
                 📥 Importar Carta desde Excel
             </a>
             {% endif %}
-            <a href="{% url 'inicio' %}" class="btn btn-outline-primary">
+            <a href="{% url 'inicio' %}" class="btn btn-outline-primary shadow-sm">
                 <i class="bi bi-arrow-left-circle me-1"></i> Volver al Dashboard
             </a>
         </div>
     </div>
 
     <!-- Buscador -->
-    <div class="mb-4">
-        <input type="text" id="buscador" class="form-control form-control-lg border-primary" 
-               placeholder="🔍 Buscar plato o categoría...">
+    <div class="input-group mb-4 shadow-sm">
+        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+        <input type="text" id="buscador" class="form-control form-control-lg" 
+               placeholder="Buscar plato o categoría...">
     </div>
 
     <!-- Categorías con Platos -->
+    {% if platos_por_categoria %}
     {% for categoria, platos_categoria in platos_por_categoria.items %}
-    <div class="mb-5 categoria-section" id="cat-{{ categoria|slugify }}">
-        <h3 class="fw-bold text-dark categoria-title">
-            <i class="bi bi-tags-fill text-primary me-2"></i>{{ categoria }}
+    <section class="mb-5 categoria-section" id="cat-{{ categoria|slugify }}">
+        <h3 class="fw-bold categoria-title mb-3">
+            <i class="bi bi-tags-fill me-2"></i>{{ categoria }}
         </h3>
-        <div class="row g-3 mt-2">
+        <div class="row g-3">
             {% for plato in platos_categoria %}
             <div class="col-12 col-md-6 col-lg-4 plato-item">
                 <div class="card plato-card shadow-sm border-0 h-100">
                     <div class="card-body d-flex flex-column justify-content-between text-center">
-                        <h5 class="fw-semibold nombre">{{ plato.nombre }}</h5>
+                        <h5 class="fw-semibold nombre text-dark">{{ plato.nombre }}</h5>
                         <p class="text-muted precio mb-3">S/. {{ plato.precio|floatformat:2 }}</p>
                         {% if pedido %}
                         <a href="{% url 'agregar_plato' pedido.id plato.id %}" 
-                           class="btn btn-success w-100 mt-auto">
+                           class="btn btn-primary w-100 mt-auto">
                             <i class="bi bi-plus-circle me-1"></i> Agregar
                         </a>
                         {% else %}
-                        <span class="text-muted">Seleccione una mesa/pedido para agregar</span>
+                        <small class="text-muted d-block">Seleccione una mesa/pedido para agregar</small>
                         {% endif %}
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
-    </div>
-    {% empty %}
-    <p class="text-muted">No hay platos disponibles.</p>
+    </section>
     {% endfor %}
-
+    {% else %}
+    <div class="alert alert-warning text-center shadow-sm">
+        <i class="bi bi-emoji-frown me-1"></i> No hay platos disponibles en la carta.
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 
 {% block extra_css %}
 <style>
 body {
-    background: #f4f9fc;
+    background: linear-gradient(to bottom, #f8f9fa, #eef4f8);
 }
 
-/* Títulos de categoría */
+/* Encabezado de categoría */
 .categoria-title {
-    border-left: 5px solid #0d6efd;
+    border-left: 4px solid #0d6efd;
     padding-left: 0.5rem;
-    margin-bottom: 1rem;
+    color: #0d6efd;
 }
 
 /* Tarjetas de platos */
 .plato-card {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 0.75rem;
+    background-color: #fff;
 }
 .plato-card:hover {
-    transform: scale(1.02);
+    transform: translateY(-3px);
     box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+/* Botones */
+.btn-primary {
+    background-color: #0d6efd;
+    border: none;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+.btn-primary:hover {
+    background-color: #0b5ed7;
 }
 </style>
 {% endblock %}
@@ -102,14 +119,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 const categoria = sec.querySelector("h3").innerText.toLowerCase();
 
                 if (nombre.includes(filtro) || categoria.includes(filtro)) {
-                    card.style.display = "block";
+                    card.parentElement.style.display = "";
                     visible = true;
                 } else {
-                    card.style.display = "none";
+                    card.parentElement.style.display = "none";
                 }
             });
 
-            sec.style.display = visible ? "block" : "none";
+            sec.style.display = visible ? "" : "none";
         });
     });
 });
