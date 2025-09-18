@@ -145,10 +145,17 @@ def agregar_plato(request, pedido_id, plato_id):
     if pedido.estado != "abierto":
         messages.error(request, "No se puede modificar un pedido cerrado o cancelado.")
         return redirect("detalle_pedido", pedido_id=pedido.id)
+
     plato = get_object_or_404(Plato, id=plato_id)
-    detalle, created = DetallePedido.objects.get_or_create(pedido=pedido, plato=plato)
-    detalle.cantidad += 1
-    detalle.save()
+    detalle, created = DetallePedido.objects.get_or_create(
+        pedido=pedido, plato=plato,
+        defaults={"cantidad": 1}  # 👈 Se crea con cantidad=1 si no existía
+    )
+
+    if not created:
+        detalle.cantidad += 1
+        detalle.save()
+
     return redirect("detalle_pedido", pedido_id=pedido.id)
 
 
